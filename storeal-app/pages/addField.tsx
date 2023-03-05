@@ -3,11 +3,13 @@ import styles from "../styles/Home.module.css";
 import { useRouter } from "next/router";
 import { Button, Input, Table } from "reactstrap";
 import React, { useEffect, useState } from "react";
+import { useAccount } from "wagmi";
 
 export default function AddFields() {
   const router = useRouter();
   let [counter, setCounter] = useState(1);
   let [counterPermission, setCounterPermission] = useState(1);
+  const { address } = useAccount()
 
   const [formData, setFormData] = useState({});
   const [formDataWithPerm, setFormDataWithPerm] = useState({});
@@ -38,12 +40,19 @@ export default function AddFields() {
   const handlePermissions = () => {
     const data = {};
     for (let i = 0; i < counter; i++) {
-      const key = document.getElementsByName(`textbox-${i}-address`)[0]?.value;
-      const value = document.getElementsByName(`textbox-${i}-permission`)[0]?.value;
-      data[key] = value;
+      const address = document.getElementsByName(`textbox-${i}-address`)[0]?.value;
+      const permission = document.getElementsByName(`textbox-${i}-permission`)[0]?.value;
+      data[address] = permission;
     }
-    setFormDataWithPerm(data);
+    const dataArr = []
+    dataArr.push(formData);
+    dataArr.push(data);
+    dataArr.push({"address": address});
+    // console.log(JSON.stringify([...formData, ...data]));
+    setFormDataWithPerm(dataArr);
   };
+
+  useEffect(() => console.log(formDataWithPerm),[formDataWithPerm])
 
   const renderFields = () => {
     const fields = [];
