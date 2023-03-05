@@ -1,12 +1,82 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import { useRouter } from "next/router";
+import { Button, Input, Table } from "reactstrap";
+import React, { useEffect, useState } from "react";
 
 export default function AddFields() {
   const router = useRouter();
+  let [counter, setCounter] = useState(1);
+  let [counterPermission, setCounterPermission] = useState(1);
+
+  const [formData, setFormData] = useState({});
+  const [formDataWithPerm, setFormDataWithPerm] = useState({});
+
 
   const handleAddFieldClick = () => {
-    router.push('/addField'); // replace '/addField' with the actual path of the addField page
+    setCounter(counter++);
+  };
+
+  const handleAddPermissionClick = () => {
+    setCounterPermission(counterPermission++);
+  };
+
+  useEffect(() => {
+    renderFields();
+  }, [counter]);
+
+  const handleSubmit = () => {
+    const data = {};
+    for (let i = 0; i < counter; i++) {
+      const key = document.getElementsByName(`textbox-${i}-key`)[0].value;
+      const value = document.getElementsByName(`textbox-${i}-value`)[0].value;
+      data[key] = value;
+    }
+    setFormData(data);
+  };
+
+  const handlePermissions = () => {
+    const data = {};
+    for (let i = 0; i < counter; i++) {
+      const key = document.getElementsByName(`textbox-${i}-address`)[0]?.value;
+      const value = document.getElementsByName(`textbox-${i}-permission`)[0]?.value;
+      data[key] = value;
+    }
+    setFormDataWithPerm(data);
+  };
+
+  const renderFields = () => {
+    const fields = [];
+    for (let i = 0; i < counter; i++) {
+      fields.push(
+        <tr key={i}>
+          <td>
+            <Input type="text" name={`textbox-${i}-key`} placeholder="Key" />
+          </td>
+          <td>
+            <Input type="text" name={`textbox-${i}-value`} placeholder="Value" />
+          </td>
+        </tr>
+      );
+    }
+    return fields;
+  };
+
+  const renderPermissionFields = () => {
+    const fields = [];
+    for (let i = 0; i < counterPermission; i++) {
+      fields.push(
+        <tr key={i}>
+          <td>
+            <Input type="text" name={`textbox-${i}-address`} placeholder="Address" />
+          </td>
+          <td>
+            <Input type="text" name={`textbox-${i}-permission`} placeholder="Permission" />
+          </td>
+        </tr>
+      );
+    }
+    return fields;
   };
 
   return (
@@ -23,7 +93,29 @@ export default function AddFields() {
         <h1>STOREAL</h1>
         <p id="center">Distributed Database As A Service</p>
       </header>
-      <button onClick={handleAddFieldClick}>Add Field</button>
+
+      <Button style={{ padding: 10 }} onClick={handleAddFieldClick}>
+        Add Field
+      </Button>
+      <Table>{renderFields().map((field, index) => (
+      <React.Fragment key={index}>{field}</React.Fragment>
+    ))}</Table>
+    <Button style={{ padding: 10 }} onClick={handleSubmit}>
+        Create Payload
+      </Button>
+      <div>{JSON.stringify(formData)}</div>
+      
+        <br></br>
+        <Button style={{ padding: 10 }} onClick={handleAddPermissionClick}>
+        Add Permissions
+      </Button>
+      <Table>{renderPermissionFields().map((field, index) => (
+      <React.Fragment key={index}>{field}</React.Fragment>
+    ))}</Table>
+ <Button style={{ padding: 10 }} onClick={handlePermissions}>
+       Submit
+      </Button>
+      <div>{JSON.stringify(formDataWithPerm)}</div>
     </>
   );
 }
