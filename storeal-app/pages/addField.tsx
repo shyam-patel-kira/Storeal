@@ -3,13 +3,27 @@ import styles from "../styles/Home.module.css";
 import { useRouter } from "next/router";
 import { Button, Input, Table } from "reactstrap";
 import React, { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useContractWrite, usePrepareContractWrite, useWaitForTransaction } from "wagmi";
+import axios from "axios";
+import ContractABI from "../../artifacts/contracts/Storeal.sol/Storage.json";
 
 export default function AddFields() {
   const router = useRouter();
   let [counter, setCounter] = useState(1);
   let [counterPermission, setCounterPermission] = useState(1);
+  const [response, setResponse] = useState();
   const { address } = useAccount()
+  const { config } = usePrepareContractWrite({
+    address: "0x88DCa61727F991d2C6E7053d7F650283aD01d61D",
+    abi: ContractABI.abi,
+    functionName: 'writeData',
+    // args: [response.data.uuid, response.data.hash],
+    args: ["16", "QmepzLpHSM6vmFFfb7LS28RBMXbCHMFNdax23NgxSyVoSv"],
+  })
+  const { data, write } = useContractWrite(config);
+  const { isLoading, isSuccess } = useWaitForTransaction({
+    hash: data?.hash,
+  })
 
   const [formData, setFormData] = useState({});
   const [formDataWithPerm, setFormDataWithPerm] = useState({});
@@ -26,6 +40,10 @@ export default function AddFields() {
   useEffect(() => {
     renderFields();
   }, [counter]);
+
+  // useEffect(() => contractCall(""),[]);
+
+  // useEffect(() => {response && contractCall(response)}, [response]);
 
   const handleSubmit = () => {
     const data = {};
@@ -47,12 +65,28 @@ export default function AddFields() {
     const dataArr = []
     dataArr.push(formData);
     dataArr.push(data);
-    dataArr.push({"address": address});
+    dataArr.push({ "address": address });
     // console.log(JSON.stringify([...formData, ...data]));
     setFormDataWithPerm(dataArr);
+    axios.post("http://localhost:6545/x/write", dataArr)
+      .then(response => {
+        console.log("Response:", response.data);
+
+        contractCall();
+      })
+      .catch(error => {
+        console.error("Error:", error);
+      });
+
   };
 
-  useEffect(() => console.log(formDataWithPerm),[formDataWithPerm])
+  const contractCall = () => {
+    write?.();
+    console.log(data);
+    console.log(isLoading, isSuccess);
+  }
+
+  useEffect(() => console.log(formDataWithPerm), [formDataWithPerm])
 
   const renderFields = () => {
     const fields = [];
@@ -107,22 +141,22 @@ export default function AddFields() {
         Add Field
       </Button>
       <Table>{renderFields().map((field, index) => (
-      <React.Fragment key={index}>{field}</React.Fragment>
-    ))}</Table>
-    <Button style={{ padding: 10 }} onClick={handleSubmit}>
+        <React.Fragment key={index}>{field}</React.Fragment>
+      ))}</Table>
+      <Button style={{ padding: 10 }} onClick={handleSubmit}>
         Create Payload
       </Button>
       <div>{JSON.stringify(formData)}</div>
-      
-        <br></br>
-        <Button style={{ padding: 10 }} onClick={handleAddPermissionClick}>
+
+      <br></br>
+      <Button style={{ padding: 10 }} onClick={handleAddPermissionClick}>
         Add Permissions
       </Button>
       <Table>{renderPermissionFields().map((field, index) => (
-      <React.Fragment key={index}>{field}</React.Fragment>
-    ))}</Table>
- <Button style={{ padding: 10 }} onClick={handlePermissions}>
-       Submit
+        <React.Fragment key={index}>{field}</React.Fragment>
+      ))}</Table>
+      <Button style={{ padding: 10 }} onClick={() => contractCall("")}>
+        Submit
       </Button>
       <div>{JSON.stringify(formDataWithPerm)}</div>
     </>

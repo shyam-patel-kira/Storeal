@@ -19,8 +19,8 @@ const Home: NextPage = () => {
   console.log(address, isConnecting, isDisconnected);
 
   useEffect(() => {
-    if (!isDisconnected) window.location.href = "/addDocument";
-  }, [isDisconnected]);
+    if (!isDisconnected && address) window.location.href = "/addDocument";
+  }, [isDisconnected, address]);
 
   return (
     <div className={styles.container}>
