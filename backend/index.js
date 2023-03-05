@@ -1,14 +1,14 @@
-import express from "express";
-import bodyParser from "body-parser";
-import path from "path";
-import cors from "cors";
+const express = require("express");
+const bodyParser = require("body-parser");
+const path = require("path");
+const cors = require("cors");
 //Server Optimisation
-import compression from "compression";
+const compression = require("compression");
 //config file
-import dotenv from "dotenv";
+const dotenv = require("dotenv");
 dotenv.config();
 // All Routes
-import routes from "./Routes/routes.js";
+const routes = require("./Routes/routes.js");
 
 const Router = express();
 

@@ -1,29 +1,45 @@
-import express from "express";
-import bodyParser from "body-parser";
-import cors from "cors";
-import dotenv from "dotenv";
-import crypto from "crypto";
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const dotenv = require("dotenv");
+const crypto = require("crypto");
+
+const HashMap = require("hashmap");
+const fs = require("fs");
+
+// const IPFS = require( "ipfs-core";
+const axios = require("axios");
+const FormData = require("form-data");
+
 const key = crypto.randomBytes(32);
 const iv = crypto.randomBytes(16);
 const algorithm = "aes-256-cbc"; //Using AES encryption
-import HashMap from "hashmap";
-import fs from "fs";
-const hashmapTree = new HashMap();
-import * as IPFS from "ipfs-core";
-import axios from "axios";
-import FormData from "form-data";
 
+// key - uuid, value - encryption key
+const hashmapTree = new HashMap();
+// key - uuid, value - set of users
+const permissions = new HashMap();
+// key - user, value - set of uuid
+const alluuid = new HashMap();
 let gCounter = 0;
+
+const ethers = require("ethers");
+const artifact = require("../../artifacts/contracts/Storeal.sol/Storage.json");
+
+const readCall = async (address) => {
+    const privateKey = "0x81438818d904b7f216a570a8fcd2cec21c0fa012d22a061cdd4b4c5526d596dc"
+    const rpcProvider = "https://polygon-mumbai.g.alchemy.com/v2/TC73qayvJRryrS2Em9IsHD8farXgc5lk";
+    const contractAddress = "0x88DCa61727F991d2C6E7053d7F650283aD01d61D"
+    const provider = new ethers.getDefaultProvider(rpcProvider);
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const contract = new ethers.Contract(contractAddress, artifact.abi, wallet)
+    const tx = await contract.readData(address)
+    return tx
+}
 
 dotenv.config();
 
 const Router = express.Router();
-
-// get todo route
-// Router.get("/", (req, res) => {
-//   console.log("U have reached get !");
-//   res.send("get");
-// });
 
 // add todo route
 // mark todo as completed route
@@ -37,7 +53,7 @@ Router.post("/write", async (req, res) => {
   console.log("write Object : ", writeObject);
 
   let encryptedWriteObject = encrypt(writeObject);
-  let uuid = gCounter.toString() + address.toString();
+  let uuid = gCounter.toString();
 
   console.log("key : ", uuid);
 
@@ -45,61 +61,89 @@ Router.post("/write", async (req, res) => {
   gCounter++;
 
   console.log("encryptred : ", encryptedWriteObject);
-//   console.log("decrypted : ", decrypt(encryptedWriteObject));
   console.log(hashmapTree.get("00xBe15aC21c67d22979C1fd7c5228C9A05DC19010e"));
   fs.writeFileSync("test.json", encryptedWriteObject.encryptedData, (err) => {
-    if(err){
-        console.log("File write err: ", err);
+    if (err) {
+      console.log("File write err: ", err);
+    } else {
+      console.log("File write done");
     }
-    else {
-        console.log("File write done");
-    }
-  })
+  });
   const form = new FormData();
-//   fs.openSync(test.json, 'w');
-//   fs.closeSync(fs.openSync("test.json", 'w'));
   form.append("file", fs.readFileSync("test.json"), "test.json");
 
-  const response = await axios.post(
-    'http://localhost:5001/api/v0/add?',
-    form,
-    {
-        headers: {
-            ...form.getHeaders()
-        }
-    }
-    );
-    console.log(response.data);
+  const response = await axios.post("http://localhost:5001/api/v0/add?", form, {
+    headers: {
+      ...form.getHeaders(),
+    },
+  });
+//   console.log(response.data);
+//   if (permissions.get(uuid) == undefined){
+//     permissions.set(uuid, [address]);
+//   }
+//     // let users = permissions.get(uuid);
+//     // console.log("neww: ", req.body[1].read)
+//     permissions.get(uuid).push(req.body[1].read)
 
-    // fs.unlink("test.json", (err => {
-    //     if (err) console.log(err);
-    //   }));
+//     // permissions.set(uuid, users)
+  
+//   console.log("perm: ", permissions);
 
-
-
-//   const ipfs = await IPFS.create();
-//   const { cid } = await ipfs.add(encryptedWriteObject.encryptedData);
-//   console.log("Uploading to IPFS...");
-//   console.log(cid);
-
+//   console.log("first: ", alluuid.get(address))
+//   if (alluuid.get(address) == undefined){
+//     console.log("Heyy")
+//     let uuidArr = []
+//     uuidArr.push(uuid);
+//     alluuid.set(address, uuidArr);
+//     console.log(alluuid.get(address));
+//   } 
+//   else {
+//     let uuids = alluuid.get(address)
+//     uuids.push(uuid)
+//     alluuid.set(address, uuid)
+//   }
+//   if (req.body[1].read.length >= 1){
+//     console.log("xx: ", req.body[1].read);
+//   }
+//   console.log("uuid: ", alluuid)
+  
   res.status(200).json({ uuid: uuid, hash: response.data.Hash });
 });
 
 Router.get("/read", async (req, resp) => {
-  const uuid = req.body.uuid;
-  console.log("uuid: ", uuid)
-  console.log("map: ", hashmapTree)
-  const cid = req.body.cid;
+    const address = req.body.address;
+    readCall(address).then((tx) => {
+        console.log(Object.entries(tx).length);
+        const arrResp  = [];
+        let cnt = 0
+        while(cnt < Object.entries(tx).length){
+            console.log(Object.entries(tx)[cnt]);
+            arrResp.push(Object.entries(tx)[cnt][1][1]);
+            cnt++;
+        }
+        resp.status(200).json({"response": arrResp});
+        });
+    });
 
-  const url = "http://localhost:5001/api/v0/cat?arg=" + cid;
+Router.get("/read/:uuid", async (req, resp) => {
+    const address = req.body.address;
+    readCall(address).then((tx) => {
+        console.log("cid: ", tx[0][1]);
+        const uuid = req.body.uuid;
+        console.log("uuid: ", uuid)
+        console.log("map: ", hashmapTree)
+        const cid = tx[0][1];
 
-  axios.post(url).then((res) => {
-    console.log(res.data);
-    console.log(
-      decrypt({ iv: hashmapTree.get(uuid), encryptedData: res.data })
-    );
-    resp.status(200).send("done");
-  });
+        const url = "http://localhost:5001/api/v0/cat?arg=" + cid;
+
+        axios.post(url).then((res) => {
+        console.log("data: ", res.data);
+        console.log(
+            decrypt({ iv: hashmapTree.get(uuid), encryptedData: res.data })
+        );
+        resp.status(200).send("done");
+        });
+    });
 });
 
 //Encrypting text
@@ -112,17 +156,12 @@ function encrypt(text) {
 
 // Decrypting text
 function decrypt(text) {
-    console.log("1: ", text)
   let iv = Buffer.from(text.iv, "hex");
-  console.log("2")
   let encryptedText = Buffer.from(text.encryptedData, "hex");
-  console.log("3")
   let decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(key), iv);
-  console.log("4")
   let decrypted = decipher.update(encryptedText);
-  console.log("5")
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString();
 }
 
-export default Router;
+module.exports = Router;

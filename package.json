@@ -4,7 +4,7 @@
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "hardhat": "^2.13.0"
   },
-  "type": "module",
+
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.2",
     "abi-gen": "^1.0.2",
@@ -14,6 +14,7 @@
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.0.3",
+    "ethers": "^6.0.8",
     "express": "^4.18.2",
     "hashmap": "^2.4.0",
     "ipfs-core": "^0.18.0",

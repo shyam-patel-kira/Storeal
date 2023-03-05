@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
+
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract Storage is AccessControl {
@@ -14,7 +15,7 @@ contract Storage is AccessControl {
     User user;
 
     struct Data {
-        uint uuid;
+        string uuid;
         string cidraw;
         // address owner;
     }
@@ -35,7 +36,7 @@ contract Storage is AccessControl {
         _grantRole(ADMIN_READ_ROLE, _address);
     }
 
-    function writeData(uint _uuid, string memory _cidraw) public {
+    function writeData(string memory _uuid, string memory _cidraw) public {
         require(hasRole(ADMIN_WRITE_ROLE, msg.sender), "Must have admin role to set data");
         Data memory dataArrayTemp = Data(_uuid, _cidraw);
         dataArray.push(dataArrayTemp);
